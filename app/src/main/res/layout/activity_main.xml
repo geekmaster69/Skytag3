@@ -16,6 +16,7 @@
         android:backgroundTint="@color/blue"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
+
     <ImageView
         android:id="@+id/btnLogout"
         android:layout_width="32dp"
@@ -26,6 +27,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="@id/btnAddBluetooth"
         app:layout_constraintTop_toTopOf="@id/btnAddBluetooth"/>
+
 
     <Button
         android:id="@+id/btnStop"

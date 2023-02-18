@@ -14,6 +14,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -31,6 +32,7 @@ import com.example.skytag3.worker.LocationWorker
 import com.example.skytag3.worker.UpdateLocationWorker
 import com.example.skytag3.worker.makeStatusNotification
 import com.polidea.rxandroidble3.RxBleDevice
+import io.paperdb.Paper
 import java.text.SimpleDateFormat
 import java.util.concurrent.TimeUnit
 
@@ -39,6 +41,11 @@ class MainActivity : AppCompatActivity(), BLEView {
     private lateinit var dateFormat: SimpleDateFormat
     private var bleService: GpsBleService? = null
     private var bleServiceBound = false
+    private val backgroundLocation = registerForActivityResult(ActivityResultContracts.RequestPermission()){
+        if (it){ }
+    }
+
+    private val workManager = WorkManager.getInstance(application)
 
 
     //connect to the service
@@ -63,6 +70,7 @@ class MainActivity : AppCompatActivity(), BLEView {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        Paper.init(this)
 
         val bluetoothManager: BluetoothManager = getSystemService(BluetoothManager::class.java)
         val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
@@ -82,6 +90,8 @@ class MainActivity : AppCompatActivity(), BLEView {
             Intent(applicationContext, GpsBleService::class.java).apply {
                 action = GpsBleService.ACTION_STOP
                 startService(this)
+
+                workManager.cancelAllWork()
             }
 
         }
@@ -104,10 +114,7 @@ class MainActivity : AppCompatActivity(), BLEView {
         ).setConstraints(constraints)
             .addTag("my_id")
             .build()
-
         WorkManager.getInstance(this).enqueueUniquePeriodicWork("my_id", ExistingPeriodicWorkPolicy.REPLACE, updateLocationWork)
-
-
 
     }
     private fun getLocation(){
@@ -122,7 +129,6 @@ class MainActivity : AppCompatActivity(), BLEView {
         ).setConstraints(constraints)
             .addTag("my_id")
             .build()
-
         WorkManager.getInstance(this).enqueueUniquePeriodicWork("my_idd", ExistingPeriodicWorkPolicy.KEEP, getLocationWorker)
     }
 
@@ -136,7 +142,6 @@ class MainActivity : AppCompatActivity(), BLEView {
 
         startActivity(Intent(this, LoginActivity::class.java))
         finish()
-
 
     }
 
@@ -154,17 +159,16 @@ class MainActivity : AppCompatActivity(), BLEView {
     private fun checkAllRequiredPermissions(): Boolean {
 
         val requiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+
             arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.BLUETOOTH_SCAN,
                 Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.SEND_SMS
-            )
+                Manifest.permission.SEND_SMS,)
         } else {
             arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.SEND_SMS
-            )
+                Manifest.permission.SEND_SMS,)
         }
 
         for (permission in requiredPermissions) {
@@ -186,13 +190,15 @@ class MainActivity : AppCompatActivity(), BLEView {
         }
     }
 
-
     private fun finishIfRequiredPermissionsNotGranted(grantResults: IntArray) {
         if (grantResults.isNotEmpty()) {
             for (grantResult in grantResults) {
 
                 if (grantResult == PackageManager.PERMISSION_GRANTED) {
 
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        backgroundLocation.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                    }
 
                 } else {
 
@@ -220,14 +226,17 @@ class MainActivity : AppCompatActivity(), BLEView {
     }
 
     override fun onConnected(bleDevice: RxBleDevice) {
-
-        UserInfoApplication.database.userInfoDao()
-            .addUserInfo(
-                UserInfoEntity(
-                    tagkey = bleDevice.macAddress.toString())
-            )
         runOnUiThread {
             Toast.makeText(this, "Conectado con ${bleDevice.name?.trim()}", Toast.LENGTH_SHORT).show()
+            val macAddress = bleDevice.macAddress
+
+            Thread{
+                UserInfoApplication.database.userInfoDao()
+                    .updateUserInfo(
+                        UserInfoEntity(
+                            tagkey = macAddress))
+
+            }.start()
         }
     }
 
@@ -235,7 +244,6 @@ class MainActivity : AppCompatActivity(), BLEView {
         runOnUiThread {
             makeStatusNotification("Simple Click", applicationContext)
         }
-
     }
 
     override fun onError(throwable: Throwable) {

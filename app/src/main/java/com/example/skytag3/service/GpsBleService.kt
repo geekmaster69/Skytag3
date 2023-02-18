@@ -5,6 +5,7 @@ import android.content.ContentValues
 import android.content.Intent
 import android.os.*
 import android.util.Log
+import android.widget.Toast
 import com.example.skytag3.base.db.UserInfoApplication
 import com.example.skytag3.data.entity.UserInfoEntity
 import com.example.skytag3.model.UserInfo
@@ -15,6 +16,7 @@ import com.polidea.rxandroidble3.RxBleClient
 import com.polidea.rxandroidble3.RxBleDevice
 import com.polidea.rxandroidble3.scan.ScanFilter
 import com.polidea.rxandroidble3.scan.ScanSettings
+import io.paperdb.Paper
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
@@ -34,37 +36,33 @@ class GpsBleService : Service() {
     private var view: BLEView? = null
     private val serviceBinder = ServiceBinder()
 
-
-    private lateinit var tagKey: String
-    private lateinit var codigo: String
-    private lateinit var contrasena: String
-    private lateinit var ideantificador: String
-    private lateinit var usuario: String
     private lateinit var lat: String
     private lateinit var long: String
+
+    private lateinit var fecha: String
 
     private val userService = UserService()
 
     private var i: Int = 0
 
-
     private lateinit var dateFormat: SimpleDateFormat
-
 
     override fun onCreate() {
         super.onCreate()
+        Paper.init(applicationContext)
         Log.i(TAG, "Service onCreate")
         //Creacion de bluetooth
         rxBleClient = RxBleClient.create(applicationContext)
         //Creacion de GPS
         locationClient = DefaultLocationClient(
             applicationContext,
-            LocationServices.getFusedLocationProviderClient(applicationContext)
-        )
+            LocationServices.getFusedLocationProviderClient(applicationContext))
+
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i(TAG, "Service onStartCommand")
+        scan()
 
         when(intent?.action){
             ACTION_STAR -> start()
@@ -74,36 +72,22 @@ class GpsBleService : Service() {
     }
 
     private fun start(){
-
         getLocationClient()
-
-
     }
 
     private fun getLocationClient() {
 
-        locationClient.getLocationClient(60*1000)
+        locationClient.getLocationClient(5*60*1000)
             .catch { e -> e.printStackTrace() }
             .onEach { location ->
                 lat = location.latitude.toString()
                 long = location.longitude.toString()
 
-                Thread{
-                    UserInfoApplication.database.userInfoDao()
-                        .addUserInfo(
-                            UserInfoEntity(
-                                latitud = lat.toDouble(), longitud = long.toDouble()))
-                }.start()
                 sendLocation()
-
-
             }
             .launchIn(serviceScope)
     }
-
-
     override fun onBind(intent: Intent): IBinder {
-
         return serviceBinder
     }
 
@@ -119,31 +103,27 @@ class GpsBleService : Service() {
             .subscribe(
                 { scanResult ->
                     connect(scanResult.bleDevice)
-
-
-
-
-
-
-
                 }, onError())
     }
 
     private fun connect(bleDevice: RxBleDevice){
         bleDevice.establishConnection(true)
             .subscribe({ rxBleConnection ->
+                val connection = bleDevice.connectionState
                 view?.onConnected(bleDevice)
-
-
-
+                saveKey(bleDevice)
                 rxBleConnection.setupIndication(characteristicUUID, NotificationSetupMode.COMPAT)
                     .subscribe({ observable ->
                         observable.subscribe({ _ ->
-                           // view?.onKeyPressed()
+                            view?.onKeyPressed()
                             pressKey()
                         }, onError())
                     }, onError())
             }, onError())
+    }
+
+    private fun saveKey(bleDevice: RxBleDevice) {
+        Paper.book().write("tagkey", bleDevice.macAddress)
     }
 
     private fun pressKey() {
@@ -154,10 +134,9 @@ class GpsBleService : Service() {
                 view?.onKeyPressed()
 
             }else if (i==2){
+                view?.onDoubleClick()
                 Log.i(TAG, "Button Bluetooth twice")
                 start()
-
-
             }
             i = 0
 
@@ -166,43 +145,27 @@ class GpsBleService : Service() {
     suspend fun sendLocation(){
         dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
 
-
-            val userInfo = UserInfoApplication.database.userInfoDao().getAllData()
-
-
-         tagKey = userInfo.tagkey
-         codigo = "3"
-         contrasena = userInfo.contrasena
-
-         ideantificador = userInfo.identificador
-         usuario = userInfo.usuario
-         lat = userInfo.latitud.toString()
-         long = userInfo.longitud.toString()
-
-
-
-        val mensaje = "RegistraPosicion"
-        val fecha = dateFormat.format(Date())
-
-
-
-
+        val mensaje = Paper.book().read<String>("mensaje")
+        val usuario = Paper.book().read<String>("user")
+        val tagkey =  Paper.book().read<String>("tagkey") ?: "No disponible"
+        val contrasena = Paper.book().read<String>("contrasena")
+        val identificador = Paper.book().read<String>("identificador")
+        fecha = dateFormat.format(Date())
+        val codigo =  "20"
 
         val response =  userService.updateUserInfo(
             UserInfo(
-                mensaje = mensaje,
-                usuario = usuario,
+                mensaje = mensaje!!,
+                usuario = usuario!!,
                 longitud = long.toDouble(),
                 latitud = lat.toDouble(),
-                tagkey = tagKey,
-                contrasena = contrasena,
+                tagkey = tagkey,
+                contrasena = contrasena!!,
                 codigo = codigo,
                 fechahora = fecha,
-                identificador = ideantificador)
+                identificador = identificador!!)
         )
-
         Log.w(ContentValues.TAG, response.toString())
-
     }
 
     private fun scanSettings(): ScanSettings =
@@ -227,16 +190,21 @@ class GpsBleService : Service() {
         }
     }
     private fun stop(){
-        stopForeground(true)
         stopSelf()
-    }
-    override fun onDestroy() {
-
-        serviceScope.cancel()
     }
 
     companion object{
         const val ACTION_STAR = "ACTION_START"
         const val ACTION_STOP = "ACTION_STOP"
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceScope.cancel()
+        val intent = Intent("YouWillNeverKillMe")
+
+        sendBroadcast(intent)
+        Toast.makeText(this, "YouWillNeverKillMe TOAST!!", Toast.LENGTH_LONG).show()
+
     }
 }

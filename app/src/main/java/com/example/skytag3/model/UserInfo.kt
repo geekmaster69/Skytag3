@@ -11,5 +11,5 @@ data class UserInfo(
     @SerializedName("codigo")val   codigo: String = "",
     @SerializedName("latitud")val latitud: Double = 0.0,
     @SerializedName("longitud")val longitud: Double = 0.0,
-    @SerializedName("tagkey")val  tagkey: String = ""
+    @SerializedName("tagkey")val  tagkey: String
 )

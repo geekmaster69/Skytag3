@@ -5,9 +5,8 @@ import androidx.room.RoomDatabase
 import com.example.skytag3.data.dao.UserInfoDao
 import com.example.skytag3.data.entity.UserInfoEntity
 
-
-@Database(entities = [UserInfoEntity::class], version =1 )
-abstract class UserInfoDatabase : RoomDatabase() {
-
+@Database(entities = arrayOf(UserInfoEntity::class), version = 1)
+abstract class UserInfoDatabase: RoomDatabase(){
     abstract fun userInfoDao(): UserInfoDao
 }
+

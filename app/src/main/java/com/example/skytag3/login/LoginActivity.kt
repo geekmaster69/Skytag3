@@ -13,6 +13,7 @@ import com.example.skytag3.data.entity.UserInfoEntity
 import com.example.skytag3.databinding.ActivityLoginBinding
 import com.example.skytag3.login.model.LoginUserInfo
 import com.example.skytag3.login.viewmodel.LoginViewModel
+import io.paperdb.Paper
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
@@ -22,6 +23,8 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        Paper.init(this)
 
         val sp =  getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
 
@@ -45,24 +48,12 @@ class LoginActivity : AppCompatActivity() {
 
         val user = binding.etUser.text.toString()
         val password = binding.etPassword.text.toString()
-
         val identificador = appUtils.getDeviceId().take(10)
+        val mensaje = "RegistraPosicion"
 
-        Thread{
-            UserInfoApplication.database.userInfoDao()
-                .addUserInfo(
-                    UserInfoEntity(
-                        usuario = user, contrasena = password, identificador = identificador)
-                )
-
-        }.start()
 
 
         with(sp.edit()){
-            putString("user", user)
-            putString("password", password)
-            putString("identificador", identificador)
-
             putBoolean("active", true)
             apply()
         }
@@ -74,6 +65,12 @@ class LoginActivity : AppCompatActivity() {
 
                 200 ->{
                     Toast.makeText(this, "Bienvenido ${it.usuario.usuario}", Toast.LENGTH_SHORT).show()
+                    Paper.book().write("user", user)
+                    Paper.book().write("contrasena", password)
+                    //Paper.book().write("identificador", identificador)
+                    Paper.book().write("identificador", "2BC70ECB91")
+                    Paper.book().write("mensaje", mensaje)
+
                     startActivity(Intent(this, MainActivity::class.java))
                     finish()
                 }

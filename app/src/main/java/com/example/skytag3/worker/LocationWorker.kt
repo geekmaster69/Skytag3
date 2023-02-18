@@ -9,6 +9,7 @@ import com.example.skytag3.data.entity.UserInfoEntity
 import com.example.skytag3.service.DefaultLocationClient
 import com.example.skytag3.service.LocationClient
 import com.google.android.gms.location.LocationServices
+import io.paperdb.Paper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -21,6 +22,9 @@ private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 private lateinit var locationClient: LocationClient
 class LocationWorker(ctx: Context, params: WorkerParameters): CoroutineWorker(ctx, params) {
     override suspend fun doWork(): Result {
+        Paper.init(applicationContext)
+        Log.i("Get location", "get location")
+
 
         makeStatusNotification("Get Location", applicationContext)
         starLocation()
@@ -37,12 +41,30 @@ class LocationWorker(ctx: Context, params: WorkerParameters): CoroutineWorker(ct
             .catch { e -> e.printStackTrace() }
             .onEach { location ->
 
+                Paper.book().write("latitude", location.latitude)
+                Paper.book().write("longitude", location.longitude)
+
+              /*  val userInfo = UserInfoApplication.database.userInfoDao().getAllData()
+
+                val usuario = userInfo.usuario
+                val contrasena = userInfo.contrasena
+                val mensaje = userInfo.mensaje
+                val identificador = userInfo.identificador
+                val tagkey = userInfo.tagkey
+
+
                 UserInfoApplication.database.userInfoDao()
                     .addUserInfo(
                         UserInfoEntity(
-                        latitud = location.latitude, longitud = location.longitude)
-                    )
+                            tagkey = tagkey,
+                            usuario = usuario,
+                            contrasena = contrasena,
+                            mensaje = mensaje,
+                            identificador = identificador,
+                        latitud = location.latitude,
+                        longitud = location.longitude))
 
+*/
 
                 Log.w("LocationWorkManager", "${location.latitude} ${location.longitude}")
 
