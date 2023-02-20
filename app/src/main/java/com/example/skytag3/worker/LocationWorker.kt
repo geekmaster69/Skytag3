@@ -4,8 +4,6 @@ import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.example.skytag3.base.db.UserInfoApplication
-import com.example.skytag3.data.entity.UserInfoEntity
 import com.example.skytag3.service.DefaultLocationClient
 import com.example.skytag3.service.LocationClient
 import com.google.android.gms.location.LocationServices
@@ -25,7 +23,6 @@ class LocationWorker(ctx: Context, params: WorkerParameters): CoroutineWorker(ct
         Paper.init(applicationContext)
         Log.i("Get location", "get location")
 
-
         makeStatusNotification("Get Location", applicationContext)
         starLocation()
         return Result.success()
@@ -44,32 +41,9 @@ class LocationWorker(ctx: Context, params: WorkerParameters): CoroutineWorker(ct
                 Paper.book().write("latitude", location.latitude)
                 Paper.book().write("longitude", location.longitude)
 
-              /*  val userInfo = UserInfoApplication.database.userInfoDao().getAllData()
-
-                val usuario = userInfo.usuario
-                val contrasena = userInfo.contrasena
-                val mensaje = userInfo.mensaje
-                val identificador = userInfo.identificador
-                val tagkey = userInfo.tagkey
-
-
-                UserInfoApplication.database.userInfoDao()
-                    .addUserInfo(
-                        UserInfoEntity(
-                            tagkey = tagkey,
-                            usuario = usuario,
-                            contrasena = contrasena,
-                            mensaje = mensaje,
-                            identificador = identificador,
-                        latitud = location.latitude,
-                        longitud = location.longitude))
-
-*/
-
                 Log.w("LocationWorkManager", "${location.latitude} ${location.longitude}")
 
             }
             .launchIn(serviceScope)
-
     }
 }

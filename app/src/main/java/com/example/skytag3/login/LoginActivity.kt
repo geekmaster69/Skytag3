@@ -1,15 +1,13 @@
 package com.example.skytag3.login
 
-import android.content.Context
-import android.content.Intent
-import android.content.SharedPreferences
+import android.content.*
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.telephony.TelephonyManager
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
 import com.example.skytag3.MainActivity
-import com.example.skytag3.base.db.UserInfoApplication
-import com.example.skytag3.data.entity.UserInfoEntity
 import com.example.skytag3.databinding.ActivityLoginBinding
 import com.example.skytag3.login.model.LoginUserInfo
 import com.example.skytag3.login.viewmodel.LoginViewModel
@@ -17,6 +15,7 @@ import io.paperdb.Paper
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
+    private lateinit var identificador: String
     private val appUtils: AppUtils = AppUtils(this)
     private val mLoginViewModel: LoginViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,10 +29,16 @@ class LoginActivity : AppCompatActivity() {
 
 
 
+        identificador = appUtils.getDeviceId().take(10)
+
         checkLogin(sp)
 
         binding.btnLogin.setOnClickListener {
             login(sp)
+        }
+
+        binding.tvIdentificador.setOnClickListener {
+            copyToClipboard(identificador)
         }
     }
 
@@ -44,13 +49,19 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
+    fun copyToClipboard(content: String) {
+        val clipboardManager = ContextCompat.getSystemService(this, ClipboardManager::class.java)!!
+        val clip = ClipData.newPlainText("Id Compuesto", content)
+        clipboardManager.setPrimaryClip(clip)
+        Toast.makeText(this, "Identificador Copiado", Toast.LENGTH_SHORT).show()
+    }
+
     fun login(sp: SharedPreferences) {
 
         val user = binding.etUser.text.toString()
         val password = binding.etPassword.text.toString()
-        val identificador = appUtils.getDeviceId().take(10)
-        val mensaje = "RegistraPosicion"
 
+        val mensaje = "RegistraPosicion"
 
 
         with(sp.edit()){
@@ -67,8 +78,10 @@ class LoginActivity : AppCompatActivity() {
                     Toast.makeText(this, "Bienvenido ${it.usuario.usuario}", Toast.LENGTH_SHORT).show()
                     Paper.book().write("user", user)
                     Paper.book().write("contrasena", password)
-                    //Paper.book().write("identificador", identificador)
-                    Paper.book().write("identificador", "2BC70ECB91")
+                    Paper.book().write("identificador", identificador)
+                    //Paper.book().write("identificador", "2BC70ECB91")
+                    //8D8270A372
+                    //75451CC200
                     Paper.book().write("mensaje", mensaje)
 
                     startActivity(Intent(this, MainActivity::class.java))

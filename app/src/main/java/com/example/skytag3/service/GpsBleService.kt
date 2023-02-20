@@ -1,13 +1,14 @@
 package com.example.skytag3.service
 
-import android.app.Service
+import android.app.*
 import android.content.ContentValues
 import android.content.Intent
 import android.os.*
 import android.util.Log
 import android.widget.Toast
-import com.example.skytag3.base.db.UserInfoApplication
-import com.example.skytag3.data.entity.UserInfoEntity
+import com.example.skytag3.MainActivity
+import com.example.skytag3.R
+import com.example.skytag3.base.Constans.CHANNEL_ID
 import com.example.skytag3.model.UserInfo
 import com.example.skytag3.network.UserService
 import com.google.android.gms.location.LocationServices
@@ -49,6 +50,7 @@ class GpsBleService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        createNotificationChannel()
         Paper.init(applicationContext)
         Log.i(TAG, "Service onCreate")
         //Creacion de bluetooth
@@ -63,9 +65,11 @@ class GpsBleService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i(TAG, "Service onStartCommand")
         scan()
+        showNotification()
+
 
         when(intent?.action){
-            ACTION_STAR -> start()
+           // ACTION_STAR -> start()
             ACTION_STOP -> stop()
         }
         return START_STICKY
@@ -77,7 +81,7 @@ class GpsBleService : Service() {
 
     private fun getLocationClient() {
 
-        locationClient.getLocationClient(5*60*1000)
+        locationClient.getLocationClient(15*60*1000)
             .catch { e -> e.printStackTrace() }
             .onEach { location ->
                 lat = location.latitude.toString()
@@ -90,6 +94,7 @@ class GpsBleService : Service() {
     override fun onBind(intent: Intent): IBinder {
         return serviceBinder
     }
+
 
     fun bindView(view: BLEView) {
         this.view = view
@@ -109,7 +114,7 @@ class GpsBleService : Service() {
     private fun connect(bleDevice: RxBleDevice){
         bleDevice.establishConnection(true)
             .subscribe({ rxBleConnection ->
-                val connection = bleDevice.connectionState
+
                 view?.onConnected(bleDevice)
                 saveKey(bleDevice)
                 rxBleConnection.setupIndication(characteristicUUID, NotificationSetupMode.COMPAT)
@@ -207,4 +212,32 @@ class GpsBleService : Service() {
         Toast.makeText(this, "YouWillNeverKillMe TOAST!!", Toast.LENGTH_LONG).show()
 
     }
+    private fun showNotification() {
+
+        val notificationIntent = Intent(this, MainActivity::class.java)
+
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
+
+        val notification = Notification
+            .Builder(this, CHANNEL_ID)
+            .setContentText("Skytag")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        startForeground(123, notification)
+    }
+
+    private fun createNotificationChannel() {
+        val serviceChannel = NotificationChannel(
+            CHANNEL_ID, "My Service Channel",
+            NotificationManager.IMPORTANCE_LOW)
+
+        val manager = getSystemService(
+            NotificationManager::class.java
+        )
+        manager.createNotificationChannel(serviceChannel)
+    }
+
 }

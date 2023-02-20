@@ -11,7 +11,6 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
 import android.os.IBinder
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,7 +21,6 @@ import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
-import com.example.skytag3.base.db.UserInfoApplication
 import com.example.skytag3.data.entity.UserInfoEntity
 import com.example.skytag3.databinding.ActivityMainBinding
 import com.example.skytag3.login.LoginActivity
@@ -82,7 +80,7 @@ class MainActivity : AppCompatActivity(), BLEView {
                 val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                 startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
             }else{
-                bleService?.scan()
+                stopService(Intent(this, GpsBleService::class.java))
             }
         }
 
@@ -134,6 +132,7 @@ class MainActivity : AppCompatActivity(), BLEView {
 
     private fun logout() {
         val sp = getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
+        stopService(Intent(this, GpsBleService::class.java))
 
         with(sp.edit()){
             putBoolean("active", false)
@@ -228,15 +227,6 @@ class MainActivity : AppCompatActivity(), BLEView {
     override fun onConnected(bleDevice: RxBleDevice) {
         runOnUiThread {
             Toast.makeText(this, "Conectado con ${bleDevice.name?.trim()}", Toast.LENGTH_SHORT).show()
-            val macAddress = bleDevice.macAddress
-
-            Thread{
-                UserInfoApplication.database.userInfoDao()
-                    .updateUserInfo(
-                        UserInfoEntity(
-                            tagkey = macAddress))
-
-            }.start()
         }
     }
 

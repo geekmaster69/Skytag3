@@ -5,8 +5,6 @@ import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.example.skytag3.base.db.UserInfoApplication
-import com.example.skytag3.data.entity.UserInfoEntity
 import com.example.skytag3.model.UserInfo
 import com.example.skytag3.network.UserService
 import io.paperdb.Paper
@@ -42,7 +40,6 @@ class UpdateLocationWorker(ctx: Context, params: WorkerParameters): CoroutineWor
         val identificador = Paper.book().read<String>("identificador")
         val fecha = dateFormat.format(Date())
         val codigo =  "3"
-
 
 
         val response =  userService.updateUserInfo(

@@ -78,4 +78,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
+    <TextView
+        android:id="@+id/tvIdentificador"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Copiar Identificador"
+        android:textSize="22sp"
+        android:textStyle="italic"
+        android:textColor="@color/black"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tilPassword"
+        app:layout_constraintBottom_toTopOf="@id/btnLogin"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
