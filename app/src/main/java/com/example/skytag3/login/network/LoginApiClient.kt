@@ -8,6 +8,6 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 
 interface LoginApiClient {
-    @POST(Constans.TAG_KEY_SERVICE_PATH)
+    @POST(Constans.TAG_KEY_LOGIN_PATH)
     suspend fun onLogin(@Body data: LoginUserInfo) : LoginResponse
 }

@@ -35,7 +35,6 @@ import java.util.concurrent.TimeUnit
 
 @SuppressLint("MissingPermission")
 class MainActivity : AppCompatActivity(), BLEView {
-    private lateinit var dateFormat: SimpleDateFormat
     private lateinit var mGpsBleService: GpsBleService
     private var mBound = false
     private val backgroundLocation = registerForActivityResult(ActivityResultContracts.RequestPermission()){
@@ -78,17 +77,14 @@ class MainActivity : AppCompatActivity(), BLEView {
                 val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                 startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
             }else{
-                stopService(Intent(this, GpsBleService::class.java))
+               mGpsBleService?.scan()
             }
         }
 
         binding.btnStop.setOnClickListener {
-            Intent(applicationContext, GpsBleService::class.java).apply {
-                action = GpsBleService.ACTION_STOP
-                startService(this)
+           stopService(Intent(this, GpsBleService::class.java))
 
-                workManager.cancelAllWork()
-            }
+            workManager.cancelAllWork()
         }
 
         binding.btnStar.setOnClickListener {
@@ -128,22 +124,18 @@ class MainActivity : AppCompatActivity(), BLEView {
     private fun logout() {
         val sp = getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
 
-
         with(sp.edit()){
             putBoolean("active", false)
             apply()
         }
 
-
+        stopService(Intent(this, GpsBleService::class.java))
 
         startActivity(Intent(this, LoginActivity::class.java))
         finish()
 
     }
 
-    override fun onStop() {
-        super.onStop()
-    }
 
     override fun onResume() {
         super.onResume()

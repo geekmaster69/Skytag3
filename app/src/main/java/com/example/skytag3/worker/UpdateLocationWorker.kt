@@ -32,9 +32,9 @@ class UpdateLocationWorker(ctx: Context, params: WorkerParameters): CoroutineWor
         dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
 
         val mensaje = Paper.book().read<String>("mensaje")
-        val usuario = Paper.book().read<String>("user")
         val tagkey =  Paper.book().read<String>("tagkey") ?: "No disponible"
-        val contrasena = Paper.book().read<String>("contrasena")
+        val usuario = "rodrigotag"
+        val contrasena = "1234"
         val latitude =  Paper.book().read<Double>("latitude")
         val longitude = Paper.book().read<Double>("longitude")
         val identificador = Paper.book().read<String>("identificador")

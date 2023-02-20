@@ -37,6 +37,8 @@ class GpsBleService : Service() {
     private var view: BLEView? = null
     private val serviceBinder = ServiceBinder()
 
+    private lateinit var idTag: String
+
     private lateinit var lat: String
     private lateinit var long: String
 
@@ -59,18 +61,18 @@ class GpsBleService : Service() {
         locationClient = DefaultLocationClient(
             applicationContext,
             LocationServices.getFusedLocationProviderClient(applicationContext))
+        dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
 
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i(TAG, "Service onStartCommand")
-        scan()
         showNotification()
 
 
         when(intent?.action){
            // ACTION_STAR -> start()
-            ACTION_STOP -> stop()
+           // ACTION_STOP -> stop()
         }
         return START_STICKY
     }
@@ -81,13 +83,14 @@ class GpsBleService : Service() {
 
     private fun getLocationClient() {
 
-        locationClient.getLocationClient(15*60*1000)
+        locationClient.getLocationClient(7*24*60*60*1000)
             .catch { e -> e.printStackTrace() }
             .onEach { location ->
                 lat = location.latitude.toString()
                 long = location.longitude.toString()
 
-                sendLocation()
+
+
             }
             .launchIn(serviceScope)
     }
@@ -108,11 +111,14 @@ class GpsBleService : Service() {
             .subscribe(
                 { scanResult ->
                     connect(scanResult.bleDevice)
+                    idTag = scanResult.bleDevice.macAddress
+
                 }, onError())
     }
 
     private fun connect(bleDevice: RxBleDevice){
-        bleDevice.establishConnection(true)
+
+        bleDevice.establishConnection(false)
             .subscribe({ rxBleConnection ->
 
                 view?.onConnected(bleDevice)
@@ -136,7 +142,6 @@ class GpsBleService : Service() {
         Handler(Looper.getMainLooper()).postDelayed({
             if (i==1){
                 Log.i(TAG, "Button Bluetooth Pressed!!!")
-                view?.onKeyPressed()
 
             }else if (i==2){
                 view?.onDoubleClick()
@@ -148,12 +153,13 @@ class GpsBleService : Service() {
         }, 500)
     }
     suspend fun sendLocation(){
-        dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+
 
         val mensaje = Paper.book().read<String>("mensaje")
-        val usuario = Paper.book().read<String>("user")
+        val usuario = "rodrigotag"
+        val contrasena = "1234"
         val tagkey =  Paper.book().read<String>("tagkey") ?: "No disponible"
-        val contrasena = Paper.book().read<String>("contrasena")
+
         val identificador = Paper.book().read<String>("identificador")
         fecha = dateFormat.format(Date())
         val codigo =  "20"
@@ -161,11 +167,11 @@ class GpsBleService : Service() {
         val response =  userService.updateUserInfo(
             UserInfo(
                 mensaje = mensaje!!,
-                usuario = usuario!!,
+                usuario = usuario,
                 longitud = long.toDouble(),
                 latitud = lat.toDouble(),
                 tagkey = tagkey,
-                contrasena = contrasena!!,
+                contrasena = contrasena,
                 codigo = codigo,
                 fechahora = fecha,
                 identificador = identificador!!)
@@ -194,9 +200,7 @@ class GpsBleService : Service() {
             view?.onError(throwable)
         }
     }
-    private fun stop(){
-        stopSelf()
-    }
+
 
     companion object{
         const val ACTION_STAR = "ACTION_START"
@@ -218,8 +222,9 @@ class GpsBleService : Service() {
         val notification = Notification
             .Builder(this, CHANNEL_ID)
             .setContentText("Skytag")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_satellite)
             .setContentIntent(pendingIntent)
+            .setTicker("ticket")
             .build()
 
         startForeground(123, notification)
@@ -235,5 +240,8 @@ class GpsBleService : Service() {
         )
         manager.createNotificationChannel(serviceChannel)
     }
+
+
+
 
 }

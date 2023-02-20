@@ -1,8 +1,9 @@
 package com.example.skytag3.base
 
 object Constans {
-    const val BASE_URL = "https://www.poderonline.net/paginas/skymeduza2/aplicacion/servicio/web/posicion/"
-    const val TAG_KEY_SERVICE_PATH = "PositionService.php"
+    const val BASE_URL = "https://www.poderonline.net/paginas/skymeduza2/aplicacion/servicio/web/"
+    const val TAG_KEY_LOCATIO_PATH = "posicion/PositionService.php"
+    const val TAG_KEY_LOGIN_PATH = "tagkey/TagkeyService.php"
 
     @JvmField val VERBOSE_NOTIFICATION_CHANNEL_NAME: CharSequence =
         "Verbose WorkManager Notifications"

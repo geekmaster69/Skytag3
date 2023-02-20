@@ -1,6 +1,7 @@
 package com.example.skytag3.login.viewmodel
 
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -16,9 +17,16 @@ class LoginViewModel: ViewModel() {
 
     fun onLogin(loginUserInfo: LoginUserInfo){
         viewModelScope.launch {
-            val result = loginUseCase(loginUserInfo)
-            loginModel.postValue(result)
-            Log.e("viewMOdel", result.toString())
+
+
+                try {
+                    val result = loginUseCase(loginUserInfo)
+                    loginModel.postValue(result)
+                    Log.e("viewMOdel", result.toString())
+
+                } catch (e: Exception) {
+
+                }
         }
     }
 }
