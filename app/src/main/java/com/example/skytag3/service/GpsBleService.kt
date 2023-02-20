@@ -206,12 +206,8 @@ class GpsBleService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
-        val intent = Intent("YouWillNeverKillMe")
-
-        sendBroadcast(intent)
-        Toast.makeText(this, "YouWillNeverKillMe TOAST!!", Toast.LENGTH_LONG).show()
-
     }
+
     private fun showNotification() {
 
         val notificationIntent = Intent(this, MainActivity::class.java)

@@ -21,7 +21,6 @@ import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
-import com.example.skytag3.data.entity.UserInfoEntity
 import com.example.skytag3.databinding.ActivityMainBinding
 import com.example.skytag3.login.LoginActivity
 import com.example.skytag3.service.BLEView
@@ -37,28 +36,27 @@ import java.util.concurrent.TimeUnit
 @SuppressLint("MissingPermission")
 class MainActivity : AppCompatActivity(), BLEView {
     private lateinit var dateFormat: SimpleDateFormat
-    private var bleService: GpsBleService? = null
-    private var bleServiceBound = false
+    private lateinit var mGpsBleService: GpsBleService
+    private var mBound = false
     private val backgroundLocation = registerForActivityResult(ActivityResultContracts.RequestPermission()){
         if (it){ }
     }
 
     private val workManager = WorkManager.getInstance(application)
 
-
     //connect to the service
-    private val bleServiceConnection = object : ServiceConnection {
+    private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as? GpsBleService.ServiceBinder
-            bleService = binder?.service
+            mGpsBleService = binder?.service!!
 
-            bleService?.bindView(this@MainActivity)
+            mGpsBleService.bindView(this@MainActivity)
 
-            bleServiceBound = true
+            mBound = true
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-            bleServiceBound = false
+            mBound = false
         }
     }
 
@@ -91,15 +89,12 @@ class MainActivity : AppCompatActivity(), BLEView {
 
                 workManager.cancelAllWork()
             }
-
         }
 
         binding.btnStar.setOnClickListener {
             getLocation()
             updateLocation()
-
         }
-
     }
     private fun updateLocation() {
         val constraints = Constraints.Builder()
@@ -132,24 +127,30 @@ class MainActivity : AppCompatActivity(), BLEView {
 
     private fun logout() {
         val sp = getSharedPreferences("login_prefs", Context.MODE_PRIVATE)
-        stopService(Intent(this, GpsBleService::class.java))
+
 
         with(sp.edit()){
             putBoolean("active", false)
             apply()
         }
 
+
+
         startActivity(Intent(this, LoginActivity::class.java))
         finish()
 
     }
 
+    override fun onStop() {
+        super.onStop()
+    }
+
     override fun onResume() {
         super.onResume()
         if (checkAllRequiredPermissions()) {
-            if (!bleServiceBound) {
+            if (!mBound) {
                 val bleServiceIntent = Intent(applicationContext, GpsBleService::class.java)
-                applicationContext.bindService(bleServiceIntent, bleServiceConnection, Context.BIND_AUTO_CREATE)
+                applicationContext.bindService(bleServiceIntent, connection, Context.BIND_AUTO_CREATE)
                 applicationContext.startService(bleServiceIntent)
             }
         }
