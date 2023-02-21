@@ -40,7 +40,11 @@ class LoginActivity : AppCompatActivity() {
 
         checkLogin(sp)
 
-        binding.btnLogin.setOnClickListener { login(sp) }
+        binding.btnLogin.setOnClickListener {
+            login(sp)
+           /* startActivity(Intent(this, MainActivity::class.java))
+            finish()*/
+        }
 
         binding.tvIdentificador.setOnClickListener { copyToClipboard(identificador) }
     }

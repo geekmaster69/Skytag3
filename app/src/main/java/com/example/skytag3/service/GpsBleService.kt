@@ -37,7 +37,7 @@ class GpsBleService : Service() {
     private var view: BLEView? = null
     private val serviceBinder = ServiceBinder()
 
-    private lateinit var idTag: String
+
 
     private lateinit var lat: String
     private lateinit var long: String
@@ -86,10 +86,10 @@ class GpsBleService : Service() {
         locationClient.getLocationClient(7*24*60*60*1000)
             .catch { e -> e.printStackTrace() }
             .onEach { location ->
+
+
                 lat = location.latitude.toString()
                 long = location.longitude.toString()
-
-
 
             }
             .launchIn(serviceScope)
@@ -111,15 +111,16 @@ class GpsBleService : Service() {
             .subscribe(
                 { scanResult ->
                     connect(scanResult.bleDevice)
-                    idTag = scanResult.bleDevice.macAddress
+
 
                 }, onError())
     }
 
     private fun connect(bleDevice: RxBleDevice){
 
-        bleDevice.establishConnection(false)
+        bleDevice.establishConnection(true)
             .subscribe({ rxBleConnection ->
+
 
                 view?.onConnected(bleDevice)
                 saveKey(bleDevice)
